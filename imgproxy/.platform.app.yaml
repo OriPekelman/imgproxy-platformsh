@@ -1,0 +1,29 @@
+name: imgproxy
+type: golang:1.18
+variables:
+    env:
+      VIPS_VERSION: "8.12.2"
+hooks:
+    build: |
+        ./install_vipslib.sh
+        export PKG_CONFIG_PATH=/app/.global/bin/libvips/lib/pkgconfig/
+        export TMPDIR=/tmp/
+        CGO_LDFLAGS_ALLOW="-s|-w" go install github.com/imgproxy/imgproxy@latest
+web:
+    upstream:
+        socket_family: tcp
+        protocol: http
+
+    commands:
+        start: /app/go/bin/imgproxy 
+
+    locations:
+        /:
+            # Route all requests to the Go app, unconditionally.
+            # If you want some files served directly by the web server without hitting Go, see
+            # https://docs.platform.sh/configuration/app/web.html
+            allow: false
+            passthru: true
+
+# The size of the persistent disk of the application (in MB).
+disk: 1024
